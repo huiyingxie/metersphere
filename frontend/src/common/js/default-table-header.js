@@ -223,6 +223,7 @@ export let CUSTOM_TABLE_HEADER = {
 
   //缺陷列表
   ISSUE_LIST: [
+    {id: 'platformId', key: 'Y', label: 'test_track.issue.jira_num'},
     {id: 'num', key: '1', label: 'test_track.issue.id'},
     {id: 'title', key: '2', label: 'test_track.issue.title'},
     {id: 'platformStatus', key: '3', label: 'test_track.issue.status'},
@@ -232,6 +233,7 @@ export let CUSTOM_TABLE_HEADER = {
     {id: 'description', key: '7', label: 'test_track.issue.description'},
     {id: 'caseCount', key: '9', label: 'api_test.definition.api_case_number'},
     {id: 'createTime', key: '8', label: 'commons.create_time'},
+    {id: 'solveResult', key: 'Z', label: 'test_track.issue.result'},
   ]
 
 }

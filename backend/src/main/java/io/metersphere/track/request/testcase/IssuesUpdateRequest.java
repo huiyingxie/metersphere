@@ -1,6 +1,7 @@
 package io.metersphere.track.request.testcase;
 
 import io.metersphere.base.domain.IssuesWithBLOBs;
+import io.metersphere.track.dto.IssueAttachmentDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,8 +31,12 @@ public class IssuesUpdateRequest extends IssuesWithBLOBs {
     private List<String> deleteResourceIds;
     private Boolean isPlanEdit = false;
     private String refId;
+
     /**
      * azure devops bug同步fields
      */
     private String devopsFields;
+
+    private List<IssueAttachmentDTO> attachmentList;
+
 }

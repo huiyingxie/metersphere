@@ -19,33 +19,36 @@ import java.util.Map;
 
 public abstract class JiraAbstractClient extends BaseClient {
 
-    protected  String ENDPOINT;
+    protected String ENDPOINT;
 
-    protected  String PREFIX;
+    protected String PREFIX;
 
-    protected  String USER_NAME;
+    protected String USER_NAME;
 
-    protected  String PASSWD;
+    protected String PASSWD;
 
     public JiraIssue getIssues(String issuesId) {
         LogUtil.info("getIssues: " + issuesId);
         ResponseEntity<String> responseEntity;
-        responseEntity = restTemplate.exchange(getBaseUrl() + "/issue/" + issuesId, HttpMethod.GET, getAuthHttpEntity(), String.class);
-        return  (JiraIssue) getResultForObject(JiraIssue.class, responseEntity);
+        responseEntity = restTemplate.exchange(getBaseUrl() + "/issue/" + issuesId, HttpMethod.GET, getAuthHttpEntity(),
+                String.class);
+        return (JiraIssue) getResultForObject(JiraIssue.class, responseEntity);
     }
 
     public Map<String, JiraCreateMetadataResponse.Field> getCreateMetadata(String projectKey, String issueType) {
-        String url = getBaseUrl() + "/issue/createmeta?projectKeys={1}&issuetypeIds={2}&expand=projects.issuetypes.fields";
+        String url = getBaseUrl()
+                + "/issue/createmeta?projectKeys={1}&issuetypeIds={2}&expand=projects.issuetypes.fields";
         ResponseEntity<String> response = null;
         Map<String, JiraCreateMetadataResponse.Field> fields = null;
         try {
-            response = restTemplate.exchange(url, HttpMethod.GET, getAuthHttpEntity(), String.class, projectKey, issueType);
+            response = restTemplate.exchange(url, HttpMethod.GET, getAuthHttpEntity(), String.class, projectKey,
+                    issueType);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             MSException.throwException(e.getMessage());
         }
         try {
-             fields = ((JiraCreateMetadataResponse) getResultForObject(JiraCreateMetadataResponse.class, response))
+            fields = ((JiraCreateMetadataResponse) getResultForObject(JiraCreateMetadataResponse.class, response))
                     .getProjects().get(0).getIssuetypes().get(0).getFields();
         } catch (Exception e) {
             MSException.throwException(Translator.get("issue_jira_info_error"));
@@ -108,7 +111,8 @@ public abstract class JiraAbstractClient extends BaseClient {
     }
 
     public List<JiraField> getFields() {
-        ResponseEntity<String> response = restTemplate.exchange(getBaseUrl() + "/field", HttpMethod.GET, getAuthHttpEntity(), String.class);
+        ResponseEntity<String> response = restTemplate.exchange(getBaseUrl() + "/field", HttpMethod.GET,
+                getAuthHttpEntity(), String.class);
         return (List<JiraField>) getResultForList(JiraField.class, response);
     }
 
@@ -133,7 +137,7 @@ public abstract class JiraAbstractClient extends BaseClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> requestEntity = new HttpEntity<>(body, headers);
         try {
-           restTemplate.exchange(getBaseUrl() + "/issue/" + id, HttpMethod.PUT, requestEntity, String.class);
+            restTemplate.exchange(getBaseUrl() + "/issue/" + id, HttpMethod.PUT, requestEntity, String.class);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             MSException.throwException(e.getMessage());
@@ -151,7 +155,6 @@ public abstract class JiraAbstractClient extends BaseClient {
         }
     }
 
-
     public void uploadAttachment(String issueKey, File file) {
         HttpHeaders authHeader = getAuthHeader();
         authHeader.add("X-Atlassian-Token", "no-check");
@@ -163,11 +166,25 @@ public abstract class JiraAbstractClient extends BaseClient {
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(paramMap, authHeader);
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange(getBaseUrl() + "/issue/" + issueKey + "/attachments", HttpMethod.POST, requestEntity, String.class);
+            response = restTemplate.exchange(getBaseUrl() + "/issue/" + issueKey + "/attachments", HttpMethod.POST,
+                    requestEntity, String.class);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
         }
         System.out.println(response);
+    }
+
+    /**
+     * 删除附件
+     * /rest/api/2/attachment/{id}
+     *
+     * @param attachmentId 附件id
+     */
+    public void deleteAttachment(String attachmentId) {
+        HttpHeaders authHeader = getAuthHeader();
+        final HttpEntity<String> requestEntity = new HttpEntity<>(authHeader);
+        restTemplate.exchange(getBaseUrl() + "/attachment/" + attachmentId, HttpMethod.DELETE, requestEntity,
+                String.class);
     }
 
     public void auth() {
@@ -218,8 +235,10 @@ public abstract class JiraAbstractClient extends BaseClient {
 
     public JiraIssueListResponse getProjectIssues(int startAt, int maxResults, String projectKey, String issueType) {
         ResponseEntity<String> responseEntity;
-        responseEntity = restTemplate.exchange(getBaseUrl() + "/search?startAt={1}&maxResults={2}&jql=project={3}+AND+issuetype={4}", HttpMethod.GET, getAuthHttpEntity(), String.class,
+        responseEntity = restTemplate.exchange(
+                getBaseUrl() + "/search?startAt={1}&maxResults={2}&jql=project={3}+AND+issuetype={4}", HttpMethod.GET,
+                getAuthHttpEntity(), String.class,
                 startAt, maxResults, projectKey, issueType);
-        return  (JiraIssueListResponse)getResultForObject(JiraIssueListResponse.class, responseEntity);
+        return (JiraIssueListResponse) getResultForObject(JiraIssueListResponse.class, responseEntity);
     }
 }

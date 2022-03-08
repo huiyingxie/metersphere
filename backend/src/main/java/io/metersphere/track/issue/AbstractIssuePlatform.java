@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.metersphere.base.domain.*;
 import io.metersphere.base.mapper.IssuesMapper;
+import io.metersphere.base.mapper.PlatformDataMapper;
 import io.metersphere.base.mapper.ProjectMapper;
 import io.metersphere.base.mapper.TestCaseIssuesMapper;
 import io.metersphere.base.mapper.ext.ExtIssuesMapper;
@@ -58,6 +59,7 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
     protected ProjectService projectService;
     protected TestCaseService testCaseService;
     protected IssuesMapper issuesMapper;
+    protected PlatformDataMapper platformDataMapper;
     protected ExtIssuesMapper extIssuesMapper;
     protected ResourceService resourceService;
     protected RestTemplate restTemplateIgnoreSSL;
@@ -70,7 +72,6 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
     protected String userId;
     protected String defaultCustomFields;
     protected boolean isThirdPartTemplate;
-
 
     public String getKey() {
         return key;
@@ -114,6 +115,7 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
         this.extIssuesMapper = CommonBeanFactory.getBean(ExtIssuesMapper.class);
         this.resourceService = CommonBeanFactory.getBean(ResourceService.class);
         this.testCaseIssueService = CommonBeanFactory.getBean(TestCaseIssueService.class);
+        this.platformDataMapper = CommonBeanFactory.getBean(PlatformDataMapper.class);
         this.restTemplateIgnoreSSL = restTemplate;
     }
 
@@ -147,7 +149,7 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
         return getProjectKeyFuc.apply(getProject(projectId, getProjectKeyFuc));
     }
 
-    public Project getProject(String projectId,  Function<Project, String> getProjectKeyFuc) {
+    public Project getProject(String projectId, Function<Project, String> getProjectKeyFuc) {
         Project project;
         if (StringUtils.isNotBlank(projectId)) {
             project = projectService.getProjectById(projectId);
@@ -196,11 +198,13 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
         if (!CollectionUtils.isEmpty(addCaseIds)) {
             if (issuesRequest.getIsPlanEdit()) {
                 addCaseIds.forEach(caseId -> {
-                    testCaseIssueService.add(issuesId, caseId, issuesRequest.getRefId(), IssueRefType.PLAN_FUNCTIONAL.name());
+                    testCaseIssueService.add(issuesId, caseId, issuesRequest.getRefId(),
+                            IssueRefType.PLAN_FUNCTIONAL.name());
                     testCaseIssueService.updateIssuesCount(caseId);
                 });
             } else {
-                addCaseIds.forEach(caseId -> testCaseIssueService.add(issuesId, caseId, null, IssueRefType.FUNCTIONAL.name()));
+                addCaseIds.forEach(
+                        caseId -> testCaseIssueService.add(issuesId, caseId, null, IssueRefType.FUNCTIONAL.name()));
             }
         }
     }
@@ -260,7 +264,8 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
     }
 
     protected String msImg2HtmlImg(String input, String endpoint) {
-        // ![中心主题.png](/resource/md/get/a0b19136_中心主题.png) -> <img src="xxx/resource/md/get/a0b19136_中心主题.png"/>
+        // ![中心主题.png](/resource/md/get/a0b19136_中心主题.png) -> <img
+        // src="xxx/resource/md/get/a0b19136_中心主题.png"/>
         String regex = "(\\!\\[.*?\\]\\((.*?)\\))";
         Pattern pattern = Pattern.compile(regex);
         if (StringUtils.isBlank(input)) {
@@ -307,7 +312,8 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
     }
 
     protected String htmlImg2MsImg(String input) {
-        // <img src="xxx/resource/md/get/a0b19136_中心主题.png"/> ->  ![中心主题.png](/resource/md/get/a0b19136_中心主题.png)
+        // <img src="xxx/resource/md/get/a0b19136_中心主题.png"/> ->
+        // ![中心主题.png](/resource/md/get/a0b19136_中心主题.png)
         String regex = "(<img\\s*src=\\\"(.*?)\\\".*?>)";
         Pattern pattern = Pattern.compile(regex);
         if (StringUtils.isBlank(input)) {
@@ -323,7 +329,7 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
                 String mdLink = "![" + name + "](" + path + ")";
                 result = matcher.replaceFirst(mdLink);
                 matcher = pattern.matcher(result);
-            } else if(url.contains("/resource/md/get")) { //新数据走这里
+            } else if (url.contains("/resource/md/get")) { // 新数据走这里
                 String path = url.substring(url.indexOf("/resource/md/get"));
                 String name = path.substring(path.indexOf("/resource/md/get") + 35);
                 String mdLink = "![" + name + "](" + path + ")";
@@ -410,10 +416,10 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
         JSONObject child = valObj.getJSONObject("child");
         if (child != null) {// 级联框
             List<Object> values = new ArrayList<>();
-            if (StringUtils.isNotBlank(valObj.getString("id")))  {
+            if (StringUtils.isNotBlank(valObj.getString("id"))) {
                 values.add(valObj.getString("id"));
             }
-            if (StringUtils.isNotBlank(child.getString("id")))  {
+            if (StringUtils.isNotBlank(child.getString("id"))) {
                 values.add(child.getString("id"));
             }
             return values;
@@ -437,11 +443,11 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
             String fieldName = item.getCustomData();
             Object value = issue.get(fieldName);
             if (value != null) {
-               if (value instanceof JSONObject) {
-                   item.setValue(getSyncJsonParamValue(value));
+                if (value instanceof JSONObject) {
+                    item.setValue(getSyncJsonParamValue(value));
                 } else if (value instanceof JSONArray) {
                     List<Object> values = new ArrayList<>();
-                    ((JSONArray)value).forEach(attr -> {
+                    ((JSONArray) value).forEach(attr -> {
                         if (attr instanceof JSONObject) {
                             values.add(getSyncJsonParamValue(attr));
                         } else {
@@ -464,10 +470,13 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
     }
 
     @Override
-    public void syncAllIssues(Project project) {}
+    public void syncAllIssues(Project project) {
+    }
 
     @Override
-    public IssueTemplateDao getThirdPartTemplate() {return null;}
+    public IssueTemplateDao getThirdPartTemplate() {
+        return null;
+    }
 
     protected List<IssuesWithBLOBs> getIssuesByPlatformIds(List<String> platformIds) {
         IssuesService issuesService = CommonBeanFactory.getBean(IssuesService.class);
@@ -483,7 +492,8 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
     }
 
     protected void deleteSyncIssue(List<String> ids) {
-        if (CollectionUtils.isEmpty(ids)) return;
+        if (CollectionUtils.isEmpty(ids))
+            return;
         IssuesExample example = new IssuesExample();
         IssuesWithBLOBs issue = new IssuesWithBLOBs();
         issue.setPlatformStatus(IssuesStatus.DELETE.toString());
@@ -508,9 +518,11 @@ public abstract class AbstractIssuePlatform implements IssuesPlatform {
     protected void mergeCustomField(IssuesWithBLOBs issues, String defaultCustomField) {
         if (StringUtils.isNotBlank(defaultCustomField)) {
             String issuesCustomFields = issues.getCustomFields();
-            if (StringUtils.isBlank(issuesCustomFields) || issuesCustomFields.startsWith("{")) issuesCustomFields = "[]";
+            if (StringUtils.isBlank(issuesCustomFields) || issuesCustomFields.startsWith("{"))
+                issuesCustomFields = "[]";
             JSONArray issueFields = JSONArray.parseArray(issuesCustomFields);
-            Set<String> ids = issueFields.stream().map(i -> ((JSONObject) i).getString("id")).collect(Collectors.toSet());
+            Set<String> ids = issueFields.stream().map(i -> ((JSONObject) i).getString("id"))
+                    .collect(Collectors.toSet());
             JSONArray defaultFields = JSONArray.parseArray(defaultCustomField);
             defaultFields.forEach(item -> { // 如果自定义字段里没有模板新加的字段，就把新字段加上
                 String id = ((JSONObject) item).getString("id");
