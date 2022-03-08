@@ -35,12 +35,19 @@ import io.metersphere.track.request.testcase.IssuesRequest;
 import io.metersphere.track.request.testcase.IssuesUpdateRequest;
 import io.metersphere.track.request.testcase.TestCaseBatchRequest;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -77,6 +84,8 @@ public class IssuesService {
     private TestPlanTestCaseService testPlanTestCaseService;
     @Resource
     private IssueFollowMapper issueFollowMapper;
+    @Resource
+    private PlatformDataMapper platformDataMapper;
 
     public void testAuth(String workspaceId, String platform) {
         IssuesRequest issuesRequest = new IssuesRequest();
@@ -84,7 +93,6 @@ public class IssuesService {
         AbstractIssuePlatform abstractPlatform = IssueFactory.createPlatform(platform, issuesRequest);
         abstractPlatform.testAuth();
     }
-
 
     public IssuesWithBLOBs addIssues(IssuesUpdateRequest issuesRequest) {
         List<AbstractIssuePlatform> platformList = getAddPlatforms(issuesRequest);
@@ -101,6 +109,45 @@ public class IssuesService {
         return issues;
     }
 
+    public IssuesWithBLOBs addIssuesWithFiles(IssuesUpdateRequest issuesRequest, List<MultipartFile> files) {
+        List<AbstractIssuePlatform> platformList = getAddPlatforms(issuesRequest);
+        IssuesWithBLOBs issues = null;
+        for (AbstractIssuePlatform platform : platformList) {
+            issues = platform.addIssue(issuesRequest);
+            // 存在附件，上传Jira
+            if (platform instanceof JiraPlatform && files != null && files.size() > 0) {
+                JiraPlatform jiraPlatform = (JiraPlatform) platform;
+                jiraUploadAttachment(files, issues.getPlatformId(), jiraPlatform);
+                jiraPlatform.syncPlatFormData(issuesRequest.getPlatformId());
+            }
+        }
+        issuesRequest.getTestCaseIds().forEach(l -> {
+            testCaseIssueService.updateIssuesCount(l);
+        });
+        saveFollows(issuesRequest.getId(), issuesRequest.getFollows());
+        return null;
+    }
+
+    private void jiraUploadAttachment(List<MultipartFile> files, String issuesPlatformId, JiraPlatform jiraPlatform) {
+        for (MultipartFile multipartFile : files) {
+            try {
+                final String tmpPath = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
+                final boolean mkdirs = new File(tmpPath).mkdirs();
+                if (!mkdirs) {
+                    LogUtil.error("mkdirs error,tmpPath:{}", tmpPath);
+                    throw new RuntimeException("mkdirs error");
+                }
+                final File tmpFile = new File(tmpPath + multipartFile.getOriginalFilename());
+                multipartFile.transferTo(tmpFile);
+                jiraPlatform.uploadAttachment(issuesPlatformId, tmpFile);
+                if (tmpFile.exists()) {
+                    tmpFile.delete();
+                }
+            } catch (IOException ioException) {
+                throw new RuntimeException(ioException);
+            }
+        }
+    }
 
     public void updateIssues(IssuesUpdateRequest issuesRequest) {
         issuesRequest.getId();
@@ -108,8 +155,42 @@ public class IssuesService {
         platformList.forEach(platform -> {
             platform.updateIssue(issuesRequest);
         });
-        //saveFollows(issuesRequest.getId(), issuesRequest.getFollows());
+        // saveFollows(issuesRequest.getId(), issuesRequest.getFollows());
         // todo 缺陷更新事件？
+    }
+
+    public void updateIssuesWithFiles(IssuesUpdateRequest issuesRequest, List<MultipartFile> files) {
+        List<AbstractIssuePlatform> platformList = getUpdatePlatforms(issuesRequest);
+        platformList.forEach(platform -> {
+            platform.updateIssue(issuesRequest);
+            if (platform instanceof JiraPlatform) {
+                JiraPlatform jiraPlatform = (JiraPlatform) platform;
+                PlatformData platformData = platformDataMapper.selectByPlatformId(issuesRequest.getPlatformId());
+                if (platformData != null) {
+                    final JSONObject issueFields = JSONObject.parseObject(platformData.getPlatformData());
+                    final JSONArray attachmentArray = issueFields.getJSONArray("attachment");
+                    if (attachmentArray.size() > 0
+                            && attachmentArray.size() != issuesRequest.getAttachmentList().size()) {
+                        // 附件列表数量不一致，存在删除附
+                        attachmentArray.forEach(o -> {
+                            final JSONObject jsonObject = (JSONObject) o;
+                            final String filename = jsonObject.getString("filename");
+                            if (issuesRequest.getAttachmentList().stream()
+                                    .noneMatch(item -> filename.equals(item.getName()))) {
+                                jiraPlatform.deleteAttachment(jsonObject.getString("id"));
+                            }
+                        });
+                    }
+                }
+
+                if (files != null && files.size() > 0) {
+                    jiraUploadAttachment(files, issuesRequest.getPlatformId(), jiraPlatform);
+                }
+
+                jiraPlatform.syncPlatFormData(issuesRequest.getPlatformId());
+
+            }
+        });
     }
 
     public void saveFollows(String issueId, List<String> follows) {
@@ -306,7 +387,8 @@ public class IssuesService {
     }
 
     public List<ZentaoBuild> getZentaoBuilds(IssuesRequest request) {
-        ZentaoPlatform platform = (ZentaoPlatform) IssueFactory.createPlatform(IssuesManagePlatform.Zentao.name(), request);
+        ZentaoPlatform platform = (ZentaoPlatform) IssueFactory.createPlatform(IssuesManagePlatform.Zentao.name(),
+                request);
         return platform.getBuilds();
     }
 
@@ -362,8 +444,46 @@ public class IssuesService {
             } catch (Exception e) {
                 LogUtil.error(e);
             }
+
+            // Jira附件处理
+            List<IssueAttachmentDTO> attachmentDTOList = getIssueAttachmentDTOS(item);
+            item.setAttachmentList(attachmentDTOList);
         });
         return issues;
+    }
+
+    private List<IssueAttachmentDTO> getIssueAttachmentDTOS(IssuesDao item) {
+        List<IssueAttachmentDTO> attachmentDTOList = new ArrayList<>();
+        final PlatformData platformData = platformDataMapper.selectByPlatformId(item.getPlatformId());
+        if (platformData == null || platformData.getPlatformData() == null) {
+            return attachmentDTOList;
+        }
+        final JSONObject jsonObject = JSONObject.parseObject(platformData.getPlatformData());
+        if (!jsonObject.containsKey("attachment")) {
+            return attachmentDTOList;
+        }
+        final JSONArray attachment = jsonObject.getJSONArray("attachment");
+        attachment.forEach(o -> {
+            JSONObject attachmentObj = (JSONObject) o;
+            IssueAttachmentDTO attachmentDTO = new IssueAttachmentDTO();
+            attachmentDTO.setId(attachmentObj.getString("id"));
+            attachmentDTO.setName(attachmentObj.getString("filename"));
+            if (attachmentObj.getString("mimeType") != null) {
+                final String[] mimeTypes = attachmentObj.getString("mimeType").split("/");
+                attachmentDTO.setType(mimeTypes[mimeTypes.length - 1]);
+            }
+            attachmentDTO.setSize(attachmentObj.getLong("size"));
+            attachmentDTO.setUrl(attachmentObj.getString("content"));
+            if (StringUtils.isNotEmpty(attachmentObj.getString("created"))) {
+                final long createdTime = DateUtils.getTimeFromISO8601Timestamp(attachmentObj.getString("created"))
+                        .getTime();
+                attachmentDTO.setUpdateTime(createdTime);
+            }
+
+            attachmentDTOList.add(attachmentDTO);
+
+        });
+        return attachmentDTOList;
     }
 
     public Map<String, List<IssuesDao>> getIssueMap(List<IssuesDao> issues) {
@@ -463,7 +583,7 @@ public class IssuesService {
                 ClassLoader loader = Thread.currentThread().getContextClassLoader();
                 try {
                     Class clazz = loader.loadClass("io.metersphere.xpack.issue.azuredevops.AzureDevopsPlatform");
-                    Constructor cons = clazz.getDeclaredConstructor(new Class[]{IssuesRequest.class});
+                    Constructor cons = clazz.getDeclaredConstructor(new Class[] { IssuesRequest.class });
                     AbstractIssuePlatform azureDevopsPlatform = (AbstractIssuePlatform) cons.newInstance(issuesRequest);
                     syncThirdPartyIssues(azureDevopsPlatform::syncIssues, project, azureDevopsIssues);
                 } catch (Throwable e) {
@@ -472,7 +592,6 @@ public class IssuesService {
             }
         }
     }
-
 
     /**
      * 获取默认的自定义字段的取值，同步之后更新成第三方平台的值
@@ -505,7 +624,8 @@ public class IssuesService {
         return fields.toJSONString();
     }
 
-    public void syncThirdPartyIssues(BiConsumer<Project, List<IssuesDao>> syncFuc, Project project, List<IssuesDao> issues) {
+    public void syncThirdPartyIssues(BiConsumer<Project, List<IssuesDao>> syncFuc, Project project,
+            List<IssuesDao> issues) {
         try {
             syncFuc.accept(project, issues);
         } catch (Exception e) {
@@ -529,7 +649,8 @@ public class IssuesService {
         IssuesWithBLOBs issuesWithBLOBs = issuesMapper.selectByPrimaryKey(id);
         if (issuesWithBLOBs != null) {
             List<DetailColumn> columns = ReflexObjectUtil.getColumns(issuesWithBLOBs, TestPlanReference.issuesColumns);
-            OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(issuesWithBLOBs.getId()), issuesWithBLOBs.getProjectId(), issuesWithBLOBs.getTitle(), issuesWithBLOBs.getCreator(), columns);
+            OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(issuesWithBLOBs.getId()),
+                    issuesWithBLOBs.getProjectId(), issuesWithBLOBs.getTitle(), issuesWithBLOBs.getCreator(), columns);
             return JSON.toJSONString(details);
         }
         return null;
@@ -539,7 +660,8 @@ public class IssuesService {
         if (issuesRequest != null) {
             issuesRequest.setCreator(SessionUtils.getUserId());
             List<DetailColumn> columns = ReflexObjectUtil.getColumns(issuesRequest, TestPlanReference.issuesColumns);
-            OperatingLogDetails details = new OperatingLogDetails(null, issuesRequest.getProjectId(), issuesRequest.getTitle(), issuesRequest.getCreator(), columns);
+            OperatingLogDetails details = new OperatingLogDetails(null, issuesRequest.getProjectId(),
+                    issuesRequest.getTitle(), issuesRequest.getCreator(), columns);
             return JSON.toJSONString(details);
         }
         return null;
@@ -552,7 +674,8 @@ public class IssuesService {
     public void userAuth(AuthUserIssueRequest authUserIssueRequest) {
         IssuesRequest issuesRequest = new IssuesRequest();
         issuesRequest.setWorkspaceId(authUserIssueRequest.getWorkspaceId());
-        AbstractIssuePlatform abstractPlatform = IssueFactory.createPlatform(authUserIssueRequest.getPlatform(), issuesRequest);
+        AbstractIssuePlatform abstractPlatform = IssueFactory.createPlatform(authUserIssueRequest.getPlatform(),
+                issuesRequest);
         abstractPlatform.userAuth(authUserIssueRequest);
     }
 
@@ -616,7 +739,8 @@ public class IssuesService {
             return;
         }
 
-        List<TestCaseBatchRequest.CustomFiledRequest> fields = JSONObject.parseArray(customFields, TestCaseBatchRequest.CustomFiledRequest.class);
+        List<TestCaseBatchRequest.CustomFiledRequest> fields = JSONObject.parseArray(customFields,
+                TestCaseBatchRequest.CustomFiledRequest.class);
         for (TestCaseBatchRequest.CustomFiledRequest field : fields) {
             if (StringUtils.equals("状态", field.getName())) {
                 field.setValue(status);
@@ -649,7 +773,8 @@ public class IssuesService {
     }
 
     public List<IssuesWithBLOBs> getIssuesByPlatformIds(List<String> platformIds, String projectId) {
-        if (CollectionUtils.isEmpty(platformIds)) return new ArrayList<>();
+        if (CollectionUtils.isEmpty(platformIds))
+            return new ArrayList<>();
         IssuesExample example = new IssuesExample();
         example.createCriteria()
                 .andPlatformIdIn(platformIds)
@@ -657,11 +782,12 @@ public class IssuesService {
         return issuesMapper.selectByExampleWithBLOBs(example);
     }
 
-
     public IssueTemplateDao getThirdPartTemplate(String projectId) {
         if (StringUtils.isNotBlank(projectId)) {
             Project project = projectService.getProjectById(projectId);
-            return IssueFactory.createPlatform(IssuesManagePlatform.Jira.toString(), getDefaultIssueRequest(projectId, project.getWorkspaceId()))
+            return IssueFactory
+                    .createPlatform(IssuesManagePlatform.Jira.toString(),
+                            getDefaultIssueRequest(projectId, project.getWorkspaceId()))
                     .getThirdPartTemplate();
         }
         return new IssueTemplateDao();
@@ -676,7 +802,8 @@ public class IssuesService {
 
     public List<JiraIssueType> getIssueTypes(JiraIssueTypeRequest request) {
         IssuesRequest issuesRequest = getDefaultIssueRequest(request.getProjectId(), request.getWorkspaceId());
-        JiraPlatform platform = (JiraPlatform) IssueFactory.createPlatform(IssuesManagePlatform.Jira.toString(), issuesRequest);
+        JiraPlatform platform = (JiraPlatform) IssueFactory.createPlatform(IssuesManagePlatform.Jira.toString(),
+                issuesRequest);
         if (StringUtils.isNotBlank(request.getJiraKey())) {
             return platform.getIssueTypes(request.getJiraKey());
         } else {
