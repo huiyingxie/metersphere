@@ -201,7 +201,7 @@ public class JiraPlatform extends AbstractIssuePlatform {
 
     /**
      * 参数比较特殊，需要特别处理
-     * 
+     *
      * @param fields
      */
     private void setSpecialParam(JSONObject fields) {
@@ -493,6 +493,19 @@ public class JiraPlatform extends AbstractIssuePlatform {
             JSONArray options = getAllowedValuesOptions(item.getAllowedValues());
             if (options != null)
                 customFieldDao.setOptions(options.toJSONString());
+
+            // 支持JIRA根据模块自动选择经办人
+            if ("assignee".equals(name)) {
+                JSONArray users = JSONObject.parseArray(customFieldDao.getOptions());
+                JSONObject defaultAssignee = new JSONObject();
+                defaultAssignee.put("text", "自动");
+                defaultAssignee.put("value", "-1");
+                users.add(0, defaultAssignee);
+                customFieldDao.setOptions(users.toJSONString());
+                if (StringUtils.isEmpty(customFieldDao.getDefaultValue())) {
+                    customFieldDao.setDefaultValue(JSONObject.toJSONString("-1"));
+                }
+            }
             fields.add(customFieldDao);
         }
 

@@ -328,6 +328,7 @@ export default {
     open(data, type) {
       this.result.loading = true;
       this.type = type;
+      this.$refs.testCaseIssueList.addIds = new Set();
       this.$nextTick(() => {
         getIssuePartTemplateWithProject((template, project) => {
           this.currentProject = project;
