@@ -1,6 +1,7 @@
 package io.metersphere.track.service;
 
 import com.alibaba.fastjson.JSON;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import io.metersphere.base.domain.*;
 import io.metersphere.base.mapper.*;
@@ -30,6 +31,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -96,6 +98,22 @@ public class TestPlanTestCaseService {
             item.setMaintainerName(userMap.get(item.getMaintainer()));
         });
         return list;
+    }
+
+    public Pager<List<TestPlanCaseDTO>> listByPage(int goPage, int pageSize, QueryTestPlanCaseRequest request) {
+        request.setOrders(ServiceUtils.getDefaultSortOrder(request.getOrders()));
+        Page<Object> page = PageHelper.startPage(goPage, pageSize, true);
+        List<TestPlanCaseDTO> list = extTestPlanTestCaseMapper.list(request);
+        Pager<List<TestPlanCaseDTO>> result = PageUtils.setPageInfo(page, list);
+        QueryMemberRequest queryMemberRequest = new QueryMemberRequest();
+        queryMemberRequest.setProjectId(request.getProjectId());
+        Map<String, String> userMap = userService.getProjectMemberList(queryMemberRequest)
+                .stream().collect(Collectors.toMap(User::getId, User::getName));
+        list.forEach(item -> {
+            item.setExecutorName(userMap.get(item.getExecutor()));
+            item.setMaintainerName(userMap.get(item.getMaintainer()));
+        });
+        return result;
     }
 
     public List<TestPlanCaseDTO> listByPlanId(QueryTestPlanCaseRequest request) {

@@ -29,8 +29,7 @@ public class TestPlanTestCaseController {
 
     @PostMapping("/list/{goPage}/{pageSize}")
     public Pager<List<TestPlanCaseDTO>> getTestPlanCases(@PathVariable int goPage, @PathVariable int pageSize, @RequestBody QueryTestPlanCaseRequest request) {
-        Page<Object> page = PageHelper.startPage(goPage, pageSize, true);
-        return PageUtils.setPageInfo(page, testPlanTestCaseService.list(request));
+        return testPlanTestCaseService.listByPage(goPage, pageSize, request);
     }
 
     /*jenkins测试计划下全部用例*/
