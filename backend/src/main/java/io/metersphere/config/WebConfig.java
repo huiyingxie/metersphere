@@ -10,7 +10,9 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -45,6 +47,7 @@ public class WebConfig implements WebMvcConfigurer {
         httpRequestFactory.setConnectTimeout(connectTimeout);
         httpRequestFactory.setReadTimeout(readTimeout);
         restTemplate.setRequestFactory(httpRequestFactory);
+        restTemplate.getMessageConverters().add(new HtmlJsonMessageConverter(objectMapper()));
         return restTemplate;
     }
 
@@ -75,4 +78,13 @@ public class WebConfig implements WebMvcConfigurer {
         return httpClientBuilder;
     }
 
+
+    /**
+     * 支持 content type test/html json
+     */
+    public static class HtmlJsonMessageConverter extends AbstractJackson2HttpMessageConverter {
+        public HtmlJsonMessageConverter(ObjectMapper objectMapper) {
+            super(objectMapper, MediaType.TEXT_HTML);
+        }
+    }
 }

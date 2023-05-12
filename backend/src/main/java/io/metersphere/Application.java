@@ -2,6 +2,7 @@ package io.metersphere;
 
 import io.metersphere.config.JmeterProperties;
 import io.metersphere.config.KafkaProperties;
+import io.metersphere.config.TestInConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
@@ -20,7 +21,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ServletComponentScan
 @EnableConfigurationProperties({
         KafkaProperties.class,
-        JmeterProperties.class
+        JmeterProperties.class,
+        TestInConfig.class
 })
 @EnableScheduling
 @PropertySource(value = {

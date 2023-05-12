@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.metersphere.base.mapper.TestInProjectBindMapper">
+    <resultMap type="io.metersphere.testin.domain.TestInProjectBind" id="TestInProjectBindMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="msProjectId" column="ms_project_id" jdbcType="VARCHAR"/>
+        <result property="testInProjectId" column="test_in_project_id" jdbcType="INTEGER"/>
+        <result property="testInProjectName" column="test_in_project_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="INTEGER"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="updateTime" column="update_time" jdbcType="INTEGER"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="delFlag" column="del_flag" jdbcType="INTEGER"/>
+        <result property="delTime" column="del_time" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <insert id="insert">
+        insert into test_in_project_bind(id, ms_project_id, test_in_project_id, test_in_project_name, create_time, creator, update_time, update_user, del_flag, del_time)
+        values (id, #{msProjectId}, #{testInProjectId}, #{testInProjectName}, #{createTime}, #{creator}, #{updateTime}, #{updateUser}, #{delFlag}, #{delTime})
+    </insert>
+    <delete id="delete">
+        update test_in_project_bind set del_flag = 1, del_time = NOW(), update_user = #{updateUser}
+        where id = #{id}
+    </delete>
+    <select id="findByMsProjectId" resultMap="TestInProjectBindMap">
+        select id, ms_project_id, test_in_project_id, test_in_project_name,
+               create_time, creator, update_time, update_user, del_flag, del_time
+        from test_in_project_bind where ms_project_id = #{msProjectId}
+    </select>
+
+</mapper>
