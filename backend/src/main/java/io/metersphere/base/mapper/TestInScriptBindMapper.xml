@@ -6,6 +6,9 @@
         <result property="msCaseId" column="ms_case_id" jdbcType="VARCHAR"/>
         <result property="testInScriptNo" column="test_in_script_no" jdbcType="INTEGER"/>
         <result property="testInScriptName" column="test_in_script_name" jdbcType="VARCHAR"/>
+        <result property="coverInstall" column="cover_install" jdbcType="INTEGER"/>
+        <result property="cleanData" column="clean_data" jdbcType="INTEGER"/>
+        <result property="keepApp" column="keep_app" jdbcType="INTEGER"/>
         <result property="createTime" column="create_time" jdbcType="INTEGER"/>
         <result property="creator" column="creator" jdbcType="VARCHAR"/>
         <result property="updateTime" column="update_time" jdbcType="INTEGER"/>
@@ -15,8 +18,12 @@
     </resultMap>
 
     <insert id="insert">
-        insert into test_in_script_bind(id,ms_case_id, test_in_script_no, test_in_script_name, create_time, creator, update_time, update_user, del_flag, del_time)
-        values (#{id}, #{msCaseId}, #{testInScriptNo}, #{testInScriptName}, #{createTime}, #{creator}, #{updateTime}, #{updateUser}, #{delFlag}, #{delTime})
+        insert into test_in_script_bind(id,ms_case_id, test_in_script_no, test_in_script_name,
+                                        cover_install, clean_data, keep_app,
+                                        create_time, creator, update_time, update_user, del_flag, del_time)
+        values (#{id}, #{msCaseId}, #{testInScriptNo}, #{testInScriptName},
+                #{coverInstall}, #{cleanData}, #{keepApp},
+                #{createTime}, #{creator}, #{updateTime}, #{updateUser}, #{delFlag}, #{delTime})
 
     </insert>
     <delete id="delete">
@@ -25,8 +32,17 @@
     </delete>
     <select id="findByMsCaseId" resultMap="TestInScriptBindMap">
         select id, ms_case_id, test_in_script_no, test_in_script_name,
+               cover_install, clean_data, keep_app,
                create_time, creator, update_time, update_user, del_flag, del_time
-        from test_in_script_bind where ms_case_id = #{msCaseId}
+        from test_in_script_bind where ms_case_id = #{msCaseId} and del_flag = 0
+        limit 1
+    </select>
+    <select id="findByScriptNo" resultType="io.metersphere.testin.domain.TestInScriptBind">
+        select id, ms_case_id, test_in_script_no, test_in_script_name,
+               create_time, creator, update_time, update_user, del_flag, del_time
+        from test_in_script_bind
+        where test_in_script_no = #{scriptNo} and del_flag = 0
+        limit 1
     </select>
 
 </mapper>

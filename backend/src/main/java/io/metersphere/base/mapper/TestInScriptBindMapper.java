@@ -16,4 +16,5 @@ public interface TestInScriptBindMapper {
     int delete(@Param("id") String id, @Param("updateUser") String updateUser);
 
     TestInScriptBind findByMsCaseId(String msCaseId);
+    TestInScriptBind findByScriptNo(Integer scriptNo);
 }

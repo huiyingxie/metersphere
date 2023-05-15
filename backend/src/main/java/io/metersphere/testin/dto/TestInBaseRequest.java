@@ -75,4 +75,15 @@ public class TestInBaseRequest<T> {
         this.timestamp = timestamp;
     }
 
+    @Override
+    public String toString() {
+        return "TestInBaseRequest{" +
+                "apikey='" + apikey + '\'' +
+                ", mkey='" + mkey + '\'' +
+                ", op='" + op + '\'' +
+                ", data=" + data +
+                ", action='" + action + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }
