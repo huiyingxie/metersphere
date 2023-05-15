@@ -295,6 +295,9 @@
             <el-dropdown-item command="schedule_task" v-permission="['PROJECT_TRACK_PLAN:READ+SCHEDULE']">
               {{ $t('commons.trigger_mode.schedule') }}
             </el-dropdown-item>
+            <el-dropdown-item command="begin_testin_task" v-permission="['PROJECT_TRACK_PLAN:READ+SCHEDULE']">
+              启动TestIn任务
+            </el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </template>
@@ -689,7 +692,18 @@ export default {
         case "schedule_task":
           this.scheduleTask(row);
           break;
+        case "begin_testin_task":
+          this.startTestinTask(row);
+          break;
       }
+    },
+    startTestinTask(row){
+      this.$post('/testIn/task/startInitData',{"noApp": 1,"msTestPlanId":row.id}, res => {
+        if(res.success){
+          let url = res.data
+          window.open( url, "_blank"); 
+        }
+      });
     },
     handleCopy(row) {
       this.cardResult.loading = true;

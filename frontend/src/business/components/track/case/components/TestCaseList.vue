@@ -227,6 +227,7 @@
     <ms-table-adv-search-bar :condition.sync="condition" :showLink="false" ref="searchBar" @search="search"/>
     <!--  删除接口提示  -->
     <list-item-delete-confirm ref="apiDeleteConfirm" @handleDelete="_handleDeleteVersion"/>
+    <MsAssociatedScript ref="associatedScript" />
   </span>
 
 </template>
@@ -285,13 +286,14 @@ import {editTestCaseOrder} from "@/network/testCase";
 import {getGraphByCondition} from "@/network/graph";
 import MsTableAdvSearchBar from "@/business/components/common/components/search/MsTableAdvSearchBar";
 import ListItemDeleteConfirm from "@/business/components/common/components/ListItemDeleteConfirm";
-
+import MsAssociatedScript from "@/business/components/performance/test/components/AssociatedScript";
 const requireComponent = require.context('@/business/components/xpack/', true, /\.vue$/);
 const relationshipGraphDrawer = requireComponent.keys().length > 0 ? requireComponent("./graph/RelationshipGraphDrawer.vue") : {};
 
 export default {
   name: "TestCaseList",
   components: {
+    MsAssociatedScript,
     ListItemDeleteConfirm,
     MsTableAdvSearchBar,
     TestCasePreview,
@@ -433,6 +435,11 @@ export default {
         {
           tip: this.$t('commons.delete'), icon: "el-icon-delete", type: "danger",
           exec: this.handleDeleteToGc,
+          permissions: ['PROJECT_TRACK_CASE:READ+DELETE']
+        },
+        {
+          tip: "关联TestIn脚本", icon: "el-icon-paperclip", type: "warning",
+          exec: this.handleAssociatedScript,
           permissions: ['PROJECT_TRACK_CASE:READ+DELETE']
         }
       ],
@@ -618,6 +625,9 @@ export default {
     },
   },
   methods: {
+    handleAssociatedScript(testCase){
+      this.$refs.associatedScript.open(testCase);
+    },
     getTemplateField() {
       let p1 = getProjectMember((data) => {
         this.members = data;

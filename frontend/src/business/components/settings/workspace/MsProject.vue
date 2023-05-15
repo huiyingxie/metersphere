@@ -64,7 +64,7 @@
             <span>{{ scope.row.updateTime | timestampFormatDate }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('commons.operating')" width="180">
+        <el-table-column :label="$t('commons.operating')" width="210">
           <template v-slot:default="scope">
             <div>
               <ms-table-operator
@@ -83,6 +83,11 @@
                     :tip="$t('load_test.other_resource')"
                     icon="el-icon-files"
                     type="success" @exec="openFiles(scope.row)"/>
+                  <ms-table-operator-button
+                    v-permission="['WORKSPACE_PROJECT_MANAGER:READ+EDIT']"
+                    :tip="'关联TestIn项目组'"
+                    icon="el-icon-paperclip"
+                    type="warning" @exec="openAssociatedProjects(scope.row)"/>
                 </template>
               </ms-table-operator>
             </div>
@@ -177,6 +182,7 @@
     <ms-jar-config ref="jarConfig"/>
 
     <ms-resource-files ref="resourceFiles"/>
+    <ms-associated-proj ref="associatedProj"/>
   </div>
 </template>
 
@@ -204,6 +210,7 @@ import MsJarConfig from "@/business/components/settings/workspace/JarConfig";
 import MsTableButton from "../../common/components/MsTableButton";
 import {_filter, _sort} from "@/common/js/tableUtils";
 import MsResourceFiles from "@/business/components/performance/test/components/ResourceFiles";
+import MsAssociatedProj from "@/business/components/performance/test/components/AssociatedProj";
 import TemplateSelect from "@/business/components/project/template/TemplateSelect";
 import {PROJECT_CONFIGS} from "@/business/components/common/components/search/search-components";
 import MsRolesTag from "@/business/components/common/components/MsRolesTag";
@@ -226,7 +233,8 @@ export default {
     MsDeleteConfirm,
     MsMainContainer, MsRolesTag,
     MsContainer, MsTableOperator, MsTablePagination, MsTableHeader, MsDialogFooter,
-    AddMember
+    AddMember,
+    MsAssociatedProj
   },
   inject: [
     'reload',
@@ -341,6 +349,9 @@ export default {
     },
     openFiles(project) {
       this.$refs.resourceFiles.open(project);
+    },
+    openAssociatedProjects(project){
+      this.$refs.associatedProj.open(project);
     },
     handleDelete(project) {
       this.$refs.deleteConfirm.open(project);
