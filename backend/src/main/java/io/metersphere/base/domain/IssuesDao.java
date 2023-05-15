@@ -1,5 +1,6 @@
 package io.metersphere.base.domain;
 
+import io.metersphere.track.dto.IssueAttachmentDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,8 +18,12 @@ public class IssuesDao extends IssuesWithBLOBs {
     private String caseId;
     private int totalIssueCount;
     private List<String> tapdUsers;
-    private List<String>zentaoBuilds;
+    private List<String> zentaoBuilds;
     private String zentaoAssigned;
     private String refType;
     private String refId;
+
+    private List<IssueAttachmentDTO> attachmentList;
+
+    private String solveResult;
 }

@@ -63,6 +63,28 @@
             min-width="80"
             prop="platform">
           </ms-table-column>
+          <ms-table-column
+                  :field="item"
+                  :fields-width="fieldsWidth"
+                  min-width="110"
+                  :label="$t('test_track.issue.result') "
+                  prop="solveResult">
+            <template v-slot="scope">
+              <span>{{ scope.row.platformStatus === "New"||scope.row.platformStatus === "处理中"||scope.row.platformStatus === "Reopen"?"未解决":"完成" }}</span>
+            </template>
+          </ms-table-column>
+          
+          <ms-table-column
+                  :field="item"
+                  :fields-width="fieldsWidth"
+                  sortable
+                  min-width="110"
+                  :label="$t('test_track.issue.jira_num') "
+                  prop="platformId">
+            <template v-slot="scope">
+              <span @click="toJira(scope.row.platformId)" class="platformId">{{ scope.row.platformId }}</span>
+            </template>
+          </ms-table-column>
 
           <ms-table-column
                   :field="item"
@@ -259,6 +281,9 @@ export default {
     this.getMaintainerOptions();
   },
   methods: {
+    toJira(id){
+      window.open(`http://yldevpm.faw.com/browse/${id}`)
+    },
     tableDoLayout() {
       if (this.$refs.table) this.$refs.table.doLayout();
     },
@@ -352,5 +377,11 @@ export default {
 
 .el-table {
   cursor: pointer;
+}
+.platformId{
+  cursor:pointer;
+}
+.platformId:hover{
+  color:#409EFF;
 }
 </style>

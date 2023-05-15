@@ -96,6 +96,9 @@ export default {
     this.getFunctionalTestCase();
   },
   watch: {
+    planId(){
+      this.getFunctionalTestCase();
+    },
     testCases() {
       if (this.testCases) {
         this.$emit('setSize', this.testCases.length);
