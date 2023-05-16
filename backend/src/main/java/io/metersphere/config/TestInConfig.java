@@ -15,10 +15,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "test-in")
 public class TestInConfig {
 
-    String appId = "testinpro";
+    String appId = "xxx";
 
-    // FIXME: 2023/5/15
-    String apiKey = "XXX";
+    String apiKey = "xxx";
 
     String baseApiUrl = "http://openapi.yc.qisi.ltd";
 
