@@ -44,5 +44,13 @@
         where test_in_script_no = #{scriptNo} and del_flag = 0
         limit 1
     </select>
+    <select id="findTestPlanAllScriptNo" resultType="java.lang.Long">
+        select sbind.test_in_script_no
+        from test_plan_test_case tcase
+                left join test_plan plan on tcase.plan_id = plan.id
+                left join test_in_script_bind sbind  on sbind.ms_case_id  = tcase.case_id
+        where plan.id = #{testPlanId}
+          and sbind.del_flag = 0
+    </select>
 
 </mapper>

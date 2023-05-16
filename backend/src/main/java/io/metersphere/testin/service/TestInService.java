@@ -101,6 +101,7 @@ public class TestInService {
             MSException.throwException("该用例所属项目未关联TestIn项目组");
         }
         final String taskDesc = "MS_" + testPlanWithBLOBs.getName() + "_" + System.currentTimeMillis();
+
         final List<Long> scriptsNoList = getPlanScriptsNoList(req.getMsTestPlanId());
 
         final String reqId = taskManager.initData(user.getEmail(), taskDesc, testInConfig.getMsCallBackUrl(),
@@ -122,16 +123,10 @@ public class TestInService {
     }
 
     private List<Long> getPlanScriptsNoList(String testPlanId) {
-        List<Long> scriptsNoList = new ArrayList<>();
-        // TODO: 2023/5/12 联表查询 优化
-        final TestPlanTestCaseExample example = new TestPlanTestCaseExample();
-        example.createCriteria().andPlanIdEqualTo(testPlanId);
-        final List<TestPlanTestCase> testPlanTestCases = testPlanTestCaseMapper.selectByExample(example);
-        for (TestPlanTestCase planTestCase : testPlanTestCases) {
-            final TestInScriptBind scriptBind = scriptBindMapper.findByMsCaseId(planTestCase.getCaseId());
-            scriptsNoList.add(scriptBind.getTestInScriptNo());
+        List<Long> scriptsNoList = scriptBindMapper.findTestPlanAllScriptNo(testPlanId);
+        if (scriptsNoList.size() == 0) {
+            MSException.throwException("未关联用例或未绑定TestIn脚本");
         }
-
         return scriptsNoList;
     }
 

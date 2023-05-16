@@ -3,6 +3,8 @@ package io.metersphere.base.mapper;
 import io.metersphere.testin.domain.TestInScriptBind;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * Describe
  *
@@ -16,5 +18,8 @@ public interface TestInScriptBindMapper {
     int delete(@Param("id") String id, @Param("updateUser") String updateUser);
 
     TestInScriptBind findByMsCaseId(String msCaseId);
+
     TestInScriptBind findByScriptNo(Integer scriptNo);
+
+    List<Long> findTestPlanAllScriptNo(@Param("testPlanId") String testPlanId);
 }

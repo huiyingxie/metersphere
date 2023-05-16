@@ -83,7 +83,6 @@ public class TestInTaskService {
      * @param projectId TestIn projectId
      */
     public void updatePlanCaseStatus(String taskId, int projectId) {
-        // TODO: 2023/5/12
         boolean haveNextPage = true;
         String userEmail = testInConfig.getDefaultQueryUserMail();
         int page = 1;

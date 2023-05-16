@@ -34,9 +34,7 @@ public class TestInTaskController {
     @PostMapping("callback")
     public String getProjectList(@RequestBody String callbackData) {
         LogUtil.info("testIn callback data:", callbackData);
-        System.out.println("testIn callback data: " + callbackData);
         testInTaskService.dealCallBack(callbackData);
-        // FIXME: 2023/5/12 测试
         return "ok";
     }
 }
