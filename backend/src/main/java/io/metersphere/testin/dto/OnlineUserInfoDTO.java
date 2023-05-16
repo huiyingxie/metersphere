@@ -12,7 +12,7 @@ public class OnlineUserInfoDTO {
     @JsonProperty("email")
     private String email;
 
-    @JsonProperty("projectId")
+    @JsonProperty("projectid")
     private Integer projectId;
 
     public OnlineUserInfoDTO(String email) {

@@ -36,7 +36,7 @@ public class ReportManager {
     @Resource
     private TestInConfig testInConfig;
 
-    public LinkedHashMap<String, Object> list(String userEmail,
+    public TaskReportData list(String userEmail,
                                               int projectId,
                                               String taskId,
                                               int page,
@@ -55,8 +55,8 @@ public class ReportManager {
                         .withPageSize(pageSize)
                         .build())
                 .build();
-        ParameterizedTypeReference<TestInBaseRespond<LinkedHashMap<String, Object>>> reference =
-                new ParameterizedTypeReference<TestInBaseRespond<LinkedHashMap<String, Object>>>() {
+        ParameterizedTypeReference<TestInBaseRespond<TaskReportData>> reference =
+                new ParameterizedTypeReference<TestInBaseRespond<TaskReportData>>() {
                 };
 
         try {
@@ -64,9 +64,9 @@ public class ReportManager {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        final ResponseEntity<TestInBaseRespond<LinkedHashMap<String, Object>>> responseEntity = restTemplate.exchange(testInConfig.getBaseApiUrl(), HttpMethod.POST, new HttpEntity<>(request), reference);
+        final ResponseEntity<TestInBaseRespond<TaskReportData>> responseEntity = restTemplate.exchange(testInConfig.getBaseApiUrl(), HttpMethod.POST, new HttpEntity<>(request), reference);
         LogUtil.info("获取云测任务报告列表响应：{}", responseEntity);
-        final TestInBaseRespond<LinkedHashMap<String, Object>> respond = responseEntity.getBody();
+        final TestInBaseRespond<TaskReportData> respond = responseEntity.getBody();
         if (respond == null || !respond.isSuccess()) {
             String errMsg = respond != null ? respond.getMsg() : "";
             MSException.throwException("访问云测接口失败: " + errMsg);

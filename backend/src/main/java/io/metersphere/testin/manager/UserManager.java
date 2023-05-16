@@ -5,6 +5,7 @@ import io.metersphere.commons.utils.LogUtil;
 import io.metersphere.config.TestInConfig;
 import io.metersphere.testin.common.ApiOptions;
 import io.metersphere.testin.dto.*;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 
 /**
  * Describe
@@ -38,8 +40,13 @@ public class UserManager {
         ParameterizedTypeReference<TestInBaseRespond<ResultDto>> reference =
                 new ParameterizedTypeReference<TestInBaseRespond<ResultDto>>() {
                 };
-
-        final ResponseEntity<TestInBaseRespond<ResultDto>> responseEntity = restTemplate.exchange(testInConfig.getBaseApiUrl(), HttpMethod.POST, new HttpEntity<>(request), reference);
+        try {
+            LogUtil.info("获取云测用户Token请求：{}", new ObjectMapper().writeValueAsString(request));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        final ResponseEntity<TestInBaseRespond<ResultDto>> responseEntity = restTemplate.exchange(testInConfig.getBaseApiUrl(),
+                HttpMethod.POST, new HttpEntity<>(request), reference);
         LogUtil.info("获取云测用户Token响应：{}", responseEntity);
         final TestInBaseRespond<ResultDto> respond = responseEntity.getBody();
         if (respond == null || !respond.isSuccess()) {

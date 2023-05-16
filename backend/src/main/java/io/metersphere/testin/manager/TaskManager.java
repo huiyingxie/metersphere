@@ -6,6 +6,7 @@ import io.metersphere.commons.utils.LogUtil;
 import io.metersphere.config.TestInConfig;
 import io.metersphere.testin.common.ApiOptions;
 import io.metersphere.testin.dto.*;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,11 +67,17 @@ public class TaskManager {
                         .build())
                 .withAction(APP)
                 .build();
+        LogUtil.info("云测任务初始化请求：{}", request);
+        try {
+            LogUtil.info("云测任务初始化请求：{}", new ObjectMapper().writeValueAsString(request));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         ParameterizedTypeReference<TestInBaseRespond<ResultDto>> reference =
                 new ParameterizedTypeReference<TestInBaseRespond<ResultDto>>() {
                 };
-
-        final ResponseEntity<TestInBaseRespond<ResultDto>> responseEntity = restTemplate.exchange(testInConfig.getBaseApiUrl(), HttpMethod.POST, new HttpEntity<>(request), reference);
+        final ResponseEntity<TestInBaseRespond<ResultDto>> responseEntity = restTemplate.exchange(testInConfig.getBaseApiUrl(),
+                HttpMethod.POST, new HttpEntity<>(request), reference);
         LogUtil.info("云测任务初始化响应：{}", responseEntity);
         final TestInBaseRespond<ResultDto> respond = responseEntity.getBody();
         if (respond == null || !respond.isSuccess()) {
@@ -140,6 +148,14 @@ public class TaskManager {
             public void setKeepApp(Integer keepApp) {
                 this.keepApp = keepApp;
             }
+        }
+
+        @Override
+        public String toString() {
+            return "ScriptsItem{" +
+                    "scriptNo=" + scriptNo +
+                    ", standard=" + standard +
+                    '}';
         }
     }
 }

@@ -16,7 +16,7 @@
 
     <insert id="insert">
         insert into test_in_project_bind(id, ms_project_id, test_in_project_id, test_in_project_name, create_time, creator, update_time, update_user, del_flag, del_time)
-        values (id, #{msProjectId}, #{testInProjectId}, #{testInProjectName}, #{createTime}, #{creator}, #{updateTime}, #{updateUser}, #{delFlag}, #{delTime})
+        values (#{id}, #{msProjectId}, #{testInProjectId}, #{testInProjectName}, #{createTime}, #{creator}, #{updateTime}, #{updateUser}, #{delFlag}, #{delTime})
     </insert>
     <delete id="delete">
         update test_in_project_bind set del_flag = 1, del_time = NOW(), update_user = #{updateUser}
@@ -25,7 +25,9 @@
     <select id="findByMsProjectId" resultMap="TestInProjectBindMap">
         select id, ms_project_id, test_in_project_id, test_in_project_name,
                create_time, creator, update_time, update_user, del_flag, del_time
-        from test_in_project_bind where ms_project_id = #{msProjectId}
+        from test_in_project_bind
+        where ms_project_id = #{msProjectId}
+          and del_flag = 0 limit 1
     </select>
 
 </mapper>

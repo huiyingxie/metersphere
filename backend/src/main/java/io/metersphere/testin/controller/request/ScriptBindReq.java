@@ -14,6 +14,21 @@ public class ScriptBindReq {
 
     private String testInScriptName;
 
+    /**
+     * 脚本执行策略-覆盖安装
+     */
+    private Integer coverInstall;
+
+    /**
+     * 脚本执行策略-清理数据
+     */
+    private Integer cleanData;
+
+    /**
+     * 脚本执行策略-保持应用
+     */
+    private Integer keepApp;
+
     public String getMsCaseId() {
         return msCaseId;
     }
@@ -36,5 +51,29 @@ public class ScriptBindReq {
 
     public void setTestInScriptName(String testInScriptName) {
         this.testInScriptName = testInScriptName;
+    }
+
+    public Integer getCoverInstall() {
+        return coverInstall;
+    }
+
+    public void setCoverInstall(Integer coverInstall) {
+        this.coverInstall = coverInstall;
+    }
+
+    public Integer getCleanData() {
+        return cleanData;
+    }
+
+    public void setCleanData(Integer cleanData) {
+        this.cleanData = cleanData;
+    }
+
+    public Integer getKeepApp() {
+        return keepApp;
+    }
+
+    public void setKeepApp(Integer keepApp) {
+        this.keepApp = keepApp;
     }
 }

@@ -26,6 +26,7 @@ import io.metersphere.testin.manager.ScriptManager;
 import io.metersphere.testin.manager.TaskManager;
 import io.metersphere.testin.manager.UserManager;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +34,6 @@ import javax.annotation.Resource;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,6 +84,10 @@ public class TestInService {
     }
 
     public String startTask(StartTaskInitReq req) {
+        //默认无应用
+        if (req.getNoApp() == null || req.getNoApp() < 0) {
+            req.setNoApp(1);
+        }
         final SessionUser user = SessionUtils.getUser();
         if (user == null || StringUtils.isEmpty(user.getEmail())) {
             MSException.throwException("获取登录用户异常");
@@ -92,13 +96,11 @@ public class TestInService {
         if (testPlanWithBLOBs == null) {
             MSException.throwException("测试计划不存在");
         }
-//        Integer testInProject = 68;
         final TestInProjectBind projectBind = projectBindMapper.findByMsProjectId(testPlanWithBLOBs.getProjectId());
         if (projectBind == null || projectBind.getTestInProjectId() == null) {
-            MSException.throwException("项目未绑定TestIn项目");
+            MSException.throwException("该用例所属项目未关联TestIn项目组");
         }
-        // TODO: 2023/5/11  ...
-        final String taskDesc = "MS_" + System.currentTimeMillis();
+        final String taskDesc = "MS_" + testPlanWithBLOBs.getName() + "_" + System.currentTimeMillis();
         final List<Long> scriptsNoList = getPlanScriptsNoList(req.getMsTestPlanId());
 
         final String reqId = taskManager.initData(user.getEmail(), taskDesc, testInConfig.getMsCallBackUrl(),
@@ -158,7 +160,7 @@ public class TestInService {
     public Pager<List<TiScritpItem>> getScriptList(String msProjectId, String scriptDesc, int goPage, int pageSize) {
         final TestInProjectBind projectBind = projectBindMapper.findByMsProjectId(msProjectId);
         if (projectBind == null || projectBind.getTestInProjectId() == null) {
-            MSException.throwException("项目绑定异常");
+            MSException.throwException("该用例所属项目未关联TestIn项目组");
         }
         final SessionUser user = SessionUtils.getUser();
         if (user == null || StringUtils.isEmpty(user.getEmail())) {
@@ -176,10 +178,8 @@ public class TestInService {
             scriptBindMapper.delete(findBind.getId(), currentUser);
         }
         final TestInScriptBind record = new TestInScriptBind();
+        BeanUtils.copyProperties(req, record);
         record.setId(UUID.randomUUID().toString());
-        record.setMsCaseId(req.getMsCaseId());
-        record.setTestInScriptNo(req.getTestInScriptNo());
-        record.setTestInScriptName(req.getTestInScriptName());
         record.setCreateTime(System.currentTimeMillis());
         record.setUpdateTime(System.currentTimeMillis());
         record.setCreator(currentUser);
